@@ -93,6 +93,22 @@ if uploaded_file is not None:
                     <div class="metric-label">Total Units Sold</div>
                     <div class="metric-value">{format_number(metrics['total_units_sold'])}</div>
                 </div>
+                <div class="metric-card">
+                    <div class="metric-label">Inventory Turnover</div>
+                    <div class="metric-value">{format_number(metrics['inventory_turnover'])} times</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Sell-Through Rate</div>
+                    <div class="metric-value">{format_percentage(metrics['sell_through_rate'])}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Stock to Sales Ratio</div>
+                    <div class="metric-value">{format_number(metrics['stock_to_sales_ratio'])}x</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Inventory Coverage</div>
+                    <div class="metric-value">{format_number(metrics['inventory_coverage'])} days</div>
+                </div>
                 """,
                 unsafe_allow_html=True
             )

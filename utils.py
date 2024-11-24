@@ -81,12 +81,38 @@ def load_and_process_inventory(file) -> Tuple[pd.DataFrame, pd.DataFrame, Dict]:
     outlet_df['Total_Units_Sold'] = outlet_df[monthly_columns].sum(axis=1)
     outlet_df['Beginning_Inventory'] = outlet_df[monthly_columns].sum(axis=1) + outlet_df['Units_In_Stock']
     
+    # Calculate new metrics
+    # Inventory Turnover
+    cost_of_goods_sold = (inventario_df['Units_Sold'] * inventario_df['Outlet_Price']).sum()
+    average_inventory = outlet_df['Units_In_Stock'].mean()
+    inventory_turnover = (cost_of_goods_sold / average_inventory) if average_inventory != 0 else 0
+
+    # Sell-Through Rate
+    total_units_sold = outlet_df['Total_Units_Sold'].sum()
+    total_units_in_stock = outlet_df['Units_In_Stock'].sum()
+    sell_through_rate = (total_units_sold / (total_units_sold + total_units_in_stock) * 100) if (total_units_sold + total_units_in_stock) != 0 else 0
+
+    # Stock to Sales Ratio
+    inventory_value = (outlet_df['Units_In_Stock'] * inventario_df['Outlet_Price']).sum()
+    total_sales = inventario_df['Total_Sales_Outlet_Price'].sum()
+    stock_to_sales_ratio = (inventory_value / total_sales) if total_sales != 0 else 0
+
+    # Inventory Coverage (in days)
+    monthly_sales_rate = inventario_df['Units_Sold'].sum() / 30  # Daily sales rate
+    inventory_coverage = (outlet_df['Units_In_Stock'].sum() / monthly_sales_rate) if monthly_sales_rate != 0 else 0
+
     # Compile metrics
     metrics['total_sales_outlet'] = inventario_df['Total_Sales_Outlet_Price'].sum()
     metrics['total_sales_floor'] = inventario_df['Total_Sales_Floor_Price'].sum()
     metrics['total_units_sold'] = outlet_df['Total_Units_Sold'].sum()
     metrics['avg_selling_price'] = inventario_df['Average_Selling_Price'].mean()
     metrics['avg_discount'] = inventario_df['Discount_Percentage'].mean()
+    
+    # Add new metrics
+    metrics['inventory_turnover'] = inventory_turnover
+    metrics['sell_through_rate'] = sell_through_rate
+    metrics['stock_to_sales_ratio'] = stock_to_sales_ratio
+    metrics['inventory_coverage'] = inventory_coverage
     
     # Best/Worst sellers
     best_selling = inventario_df.loc[inventario_df['Units_Sold'].idxmax()]
