@@ -174,12 +174,12 @@ if uploaded_files:
             st.plotly_chart(fig_sales_comp, use_container_width=True)
             
             # Compare inventory metrics
-            inventory_comparison = pd.DataFrame([{
-                'File': m['file_name'],
-                'Inventory Turnover': m['inventory_turnover'],
-                'Sell-Through Rate': m['sell_through_rate'],
-                'Stock to Sales Ratio': m['stock_to_sales_ratio']
-            } for m in all_metrics])
+            inventory_comparison = pd.DataFrame({
+                'File': [m['file_name'] for m in all_metrics],
+                'Inventory Turnover': [m['inventory_turnover'] for m in all_metrics],
+                'Sell-Through Rate': [m['sell_through_rate'] for m in all_metrics],
+                'Stock to Sales Ratio': [m['stock_to_sales_ratio'] for m in all_metrics]
+            })
             
             fig_inventory_comp = px.bar(
                 inventory_comparison.melt(id_vars=['File'], var_name='Metric', value_name='Value'),
@@ -192,11 +192,11 @@ if uploaded_files:
             st.plotly_chart(fig_inventory_comp, use_container_width=True)
             
             # Compare price metrics
-            price_comparison = pd.DataFrame([{
-                'File': m['file_name'],
-                'Average Selling Price': m['avg_selling_price'],
-                'Average Discount': m['avg_discount']
-            } for m in all_metrics])
+            price_comparison = pd.DataFrame({
+                'File': [m['file_name'] for m in all_metrics],
+                'Average Selling Price': [m['avg_selling_price'] for m in all_metrics],
+                'Average Discount': [m['avg_discount'] for m in all_metrics]
+            })
             
             fig_price_comp = px.bar(
                 price_comparison.melt(id_vars=['File'], var_name='Metric', value_name='Value'),
