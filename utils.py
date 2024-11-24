@@ -31,18 +31,12 @@ def validate_excel_file(file) -> Tuple[bool, str]:
 
 def load_and_process_inventory(file) -> Tuple[pd.DataFrame, pd.DataFrame, Dict]:
     """Process inventory data and return calculated metrics."""
-    try:
-        # Load the Excel file
-        inventory_data = pd.ExcelFile(file)
-        
-        # Load the sheets
-        inventario_df = pd.read_excel(inventory_data, sheet_name='Inventario')
-        outlet_df = pd.read_excel(inventory_data, sheet_name='Outlet')
-        
-        if inventario_df.empty or outlet_df.empty:
-            raise ValueError("One or more sheets are empty")
-    except Exception as e:
-        raise ValueError(f"Error loading Excel file: {str(e)}")
+    # Load the Excel file
+    inventory_data = pd.ExcelFile(file)
+    
+    # Load the sheets
+    inventario_df = inventory_data.parse('Inventario')
+    outlet_df = inventory_data.parse('Outlet')
     
     # Rename columns for standardization in inventario_df
     inventario_df.rename(columns={
