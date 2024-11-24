@@ -137,57 +137,96 @@ if uploaded_file is not None:
         # Data Visualizations
         st.markdown("### 📊 Data Visualizations")
         
-        # Monthly Sales Trend
-        monthly_sales = outlet_df[['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre']].sum()
-        monthly_sales_df = pd.DataFrame({
-            'Month': monthly_sales.index,
-            'Units Sold': monthly_sales.values
-        })
-        
-        fig_sales = px.line(
-            monthly_sales_df,
-            x='Month',
-            y='Units Sold',
-            title='Monthly Sales Trend',
-            markers=True
-        )
-        st.plotly_chart(fig_sales, use_container_width=True)
+        try:
+            # Monthly Sales Trend
+            monthly_columns = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre']
+            monthly_sales = outlet_df[monthly_columns].sum()
+            
+            # Debug print for monthly sales data
+            print("Monthly Sales Data:")
+            print(monthly_sales)
+            
+            monthly_sales_df = pd.DataFrame({
+                'Month': monthly_sales.index,
+                'Units Sold': monthly_sales.values
+            })
+            
+            # Debug print for monthly sales DataFrame
+            print("\nMonthly Sales DataFrame:")
+            print(monthly_sales_df)
+            
+            fig_sales = px.line(
+                monthly_sales_df,
+                x='Month',
+                y='Units Sold',
+                title='Monthly Sales Trend',
+                markers=True
+            )
+            st.plotly_chart(fig_sales, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error creating monthly sales trend chart: {str(e)}")
+            print(f"Monthly sales visualization error: {str(e)}")
 
         # Price Distribution
         col1, col2 = st.columns(2)
         
-        with col1:
-            fig_floor = px.histogram(
-                inventario_df,
-                x='Floor_Price',
-                title='Floor Price Distribution',
-                labels={'Floor_Price': 'Price'},
-            )
-            st.plotly_chart(fig_floor, use_container_width=True)
+        try:
+            with col1:
+                # Debug print for floor price data
+                print("\nFloor Price Distribution Data:")
+                print(inventario_df['Floor_Price'].describe())
+                
+                fig_floor = px.histogram(
+                    inventario_df,
+                    x='Floor_Price',
+                    title='Floor Price Distribution',
+                    labels={'Floor_Price': 'Price'},
+                )
+                st.plotly_chart(fig_floor, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error creating floor price distribution chart: {str(e)}")
+            print(f"Floor price visualization error: {str(e)}")
         
-        with col2:
-            fig_outlet = px.histogram(
-                inventario_df,
-                x='Outlet_Price',
-                title='Outlet Price Distribution',
-                labels={'Outlet_Price': 'Price'},
-            )
-            st.plotly_chart(fig_outlet, use_container_width=True)
+        try:
+            with col2:
+                # Debug print for outlet price data
+                print("\nOutlet Price Distribution Data:")
+                print(inventario_df['Outlet_Price'].describe())
+                
+                fig_outlet = px.histogram(
+                    inventario_df,
+                    x='Outlet_Price',
+                    title='Outlet Price Distribution',
+                    labels={'Outlet_Price': 'Price'},
+                )
+                st.plotly_chart(fig_outlet, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error creating outlet price distribution chart: {str(e)}")
+            print(f"Outlet price visualization error: {str(e)}")
 
-        # Top 10 Products by Units Sold
-        top_10_products = inventario_df.nlargest(10, 'Units_Sold')
-        fig_top10 = px.bar(
-            top_10_products,
-            x='Description',
-            y='Units_Sold',
-            title='Top 10 Products by Units Sold',
-            labels={'Description': 'Product', 'Units_Sold': 'Units Sold'}
-        )
-        fig_top10.update_layout(
-            xaxis_tickangle=45,
-            height=500
-        )
-        st.plotly_chart(fig_top10, use_container_width=True)
+        try:
+            # Top 10 Products by Units Sold
+            top_10_products = inventario_df.nlargest(10, 'Units_Sold')
+            
+            # Debug print for top 10 products data
+            print("\nTop 10 Products Data:")
+            print(top_10_products[['Description', 'Units_Sold']])
+            
+            fig_top10 = px.bar(
+                top_10_products,
+                x='Description',
+                y='Units_Sold',
+                title='Top 10 Products by Units Sold',
+                labels={'Description': 'Product', 'Units_Sold': 'Units Sold'}
+            )
+            fig_top10.update_layout(
+                xaxis_tickangle=45,
+                height=500
+            )
+            st.plotly_chart(fig_top10, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error creating top 10 products chart: {str(e)}")
+            print(f"Top 10 products visualization error: {str(e)}")
 
         # Data Tables
         st.markdown("### 📑 Detailed Data")
