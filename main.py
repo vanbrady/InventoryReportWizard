@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
 from utils import (
     validate_excel_file, 
     load_and_process_inventory,
@@ -128,7 +130,7 @@ if uploaded_file is not None:
         # Unsold Items
         with st.expander("View Unsold Items"):
             if metrics['unsold_items']:
-                st.dataframe(pd.DataFrame(metrics['unsold_items'], columns=['Product Description']))
+                st.dataframe({'Product Description': metrics['unsold_items']})
             else:
                 st.info("No unsold items found.")
         
@@ -137,73 +139,55 @@ if uploaded_file is not None:
         
         # Monthly Sales Trend
         monthly_sales = outlet_df[['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre']].sum()
+        monthly_sales_df = pd.DataFrame({
+            'Month': monthly_sales.index,
+            'Units Sold': monthly_sales.values
+        })
         
-        st.plotly_chart({
-            'data': [{
-                'x': monthly_sales.index,
-                'y': monthly_sales.values,
-                'type': 'scatter',
-                'mode': 'lines+markers',
-                'name': 'Monthly Sales'
-            }],
-            'layout': {
-                'title': 'Monthly Sales Trend',
-                'xaxis': {'title': 'Month'},
-                'yaxis': {'title': 'Units Sold'},
-                'showlegend': True
-            }
-        }, use_container_width=True)
+        fig_sales = px.line(
+            monthly_sales_df,
+            x='Month',
+            y='Units Sold',
+            title='Monthly Sales Trend',
+            markers=True
+        )
+        st.plotly_chart(fig_sales, use_container_width=True)
 
         # Price Distribution
         col1, col2 = st.columns(2)
         
         with col1:
-            st.plotly_chart({
-                'data': [{
-                    'x': inventario_df['Floor_Price'],
-                    'type': 'histogram',
-                    'name': 'Floor Price'
-                }],
-                'layout': {
-                    'title': 'Floor Price Distribution',
-                    'xaxis': {'title': 'Price'},
-                    'yaxis': {'title': 'Count'},
-                    'showlegend': True
-                }
-            }, use_container_width=True)
+            fig_floor = px.histogram(
+                inventario_df,
+                x='Floor_Price',
+                title='Floor Price Distribution',
+                labels={'Floor_Price': 'Price'},
+            )
+            st.plotly_chart(fig_floor, use_container_width=True)
         
         with col2:
-            st.plotly_chart({
-                'data': [{
-                    'x': inventario_df['Outlet_Price'],
-                    'type': 'histogram',
-                    'name': 'Outlet Price'
-                }],
-                'layout': {
-                    'title': 'Outlet Price Distribution',
-                    'xaxis': {'title': 'Price'},
-                    'yaxis': {'title': 'Count'},
-                    'showlegend': True
-                }
-            }, use_container_width=True)
+            fig_outlet = px.histogram(
+                inventario_df,
+                x='Outlet_Price',
+                title='Outlet Price Distribution',
+                labels={'Outlet_Price': 'Price'},
+            )
+            st.plotly_chart(fig_outlet, use_container_width=True)
 
         # Top 10 Products by Units Sold
         top_10_products = inventario_df.nlargest(10, 'Units_Sold')
-        st.plotly_chart({
-            'data': [{
-                'x': top_10_products['Description'],
-                'y': top_10_products['Units_Sold'],
-                'type': 'bar',
-                'name': 'Units Sold'
-            }],
-            'layout': {
-                'title': 'Top 10 Products by Units Sold',
-                'xaxis': {'title': 'Product', 'tickangle': 45},
-                'yaxis': {'title': 'Units Sold'},
-                'showlegend': True,
-                'height': 500
-            }
-        }, use_container_width=True)
+        fig_top10 = px.bar(
+            top_10_products,
+            x='Description',
+            y='Units_Sold',
+            title='Top 10 Products by Units Sold',
+            labels={'Description': 'Product', 'Units_Sold': 'Units Sold'}
+        )
+        fig_top10.update_layout(
+            xaxis_tickangle=45,
+            height=500
+        )
+        st.plotly_chart(fig_top10, use_container_width=True)
 
         # Data Tables
         st.markdown("### 📑 Detailed Data")
