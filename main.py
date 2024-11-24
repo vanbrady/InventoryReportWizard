@@ -132,6 +132,79 @@ if uploaded_file is not None:
             else:
                 st.info("No unsold items found.")
         
+        # Data Visualizations
+        st.markdown("### 📊 Data Visualizations")
+        
+        # Monthly Sales Trend
+        monthly_sales = outlet_df[['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre']].sum()
+        
+        st.plotly_chart({
+            'data': [{
+                'x': monthly_sales.index,
+                'y': monthly_sales.values,
+                'type': 'scatter',
+                'mode': 'lines+markers',
+                'name': 'Monthly Sales'
+            }],
+            'layout': {
+                'title': 'Monthly Sales Trend',
+                'xaxis': {'title': 'Month'},
+                'yaxis': {'title': 'Units Sold'},
+                'showlegend': True
+            }
+        }, use_container_width=True)
+
+        # Price Distribution
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.plotly_chart({
+                'data': [{
+                    'x': inventario_df['Floor_Price'],
+                    'type': 'histogram',
+                    'name': 'Floor Price'
+                }],
+                'layout': {
+                    'title': 'Floor Price Distribution',
+                    'xaxis': {'title': 'Price'},
+                    'yaxis': {'title': 'Count'},
+                    'showlegend': True
+                }
+            }, use_container_width=True)
+        
+        with col2:
+            st.plotly_chart({
+                'data': [{
+                    'x': inventario_df['Outlet_Price'],
+                    'type': 'histogram',
+                    'name': 'Outlet Price'
+                }],
+                'layout': {
+                    'title': 'Outlet Price Distribution',
+                    'xaxis': {'title': 'Price'},
+                    'yaxis': {'title': 'Count'},
+                    'showlegend': True
+                }
+            }, use_container_width=True)
+
+        # Top 10 Products by Units Sold
+        top_10_products = inventario_df.nlargest(10, 'Units_Sold')
+        st.plotly_chart({
+            'data': [{
+                'x': top_10_products['Description'],
+                'y': top_10_products['Units_Sold'],
+                'type': 'bar',
+                'name': 'Units Sold'
+            }],
+            'layout': {
+                'title': 'Top 10 Products by Units Sold',
+                'xaxis': {'title': 'Product', 'tickangle': 45},
+                'yaxis': {'title': 'Units Sold'},
+                'showlegend': True,
+                'height': 500
+            }
+        }, use_container_width=True)
+
         # Data Tables
         st.markdown("### 📑 Detailed Data")
         tab1, tab2 = st.tabs(["Inventory Data", "Outlet Data"])
