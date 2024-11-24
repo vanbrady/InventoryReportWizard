@@ -157,11 +157,11 @@ if uploaded_files:
             st.markdown("### 📈 Metrics Comparison")
             
             # Compare total sales
-            sales_comparison = pd.DataFrame([{
-                'File': m['file_name'],
-                'Total Sales (Outlet)': m['total_sales_outlet'],
-                'Total Sales (Floor)': m['total_sales_floor']
-            } for m in all_metrics])
+            sales_comparison = pd.DataFrame({
+                'File': [m['file_name'] for m in all_metrics],
+                'Total Sales (Outlet)': [m['total_sales_outlet'] for m in all_metrics],
+                'Total Sales (Floor)': [m['total_sales_floor'] for m in all_metrics]
+            })
             
             fig_sales_comp = px.bar(
                 sales_comparison.melt(id_vars=['File'], var_name='Metric', value_name='Amount'),
