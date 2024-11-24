@@ -31,27 +31,122 @@ Upload your file below to get started.
 
 # File upload section
 st.markdown("### 📁 Upload Inventory File")
-uploaded_file = st.file_uploader(
-    "Drag and drop your Excel file here",
+uploaded_files = st.file_uploader(
+    "Drag and drop your Excel files here",
     type=['xlsx'],
-    help="File must contain 'Inventario' and 'Outlet' sheets"
+    help="Files must contain 'Inventario' and 'Outlet' sheets",
+    accept_multiple_files=True
 )
 
-if uploaded_file is not None:
-    # Validate file
-    is_valid, message = validate_excel_file(uploaded_file)
+if uploaded_files:
+    # Dictionary to store processed data for each file
+    processed_data = {}
     
-    if not is_valid:
-        st.error(message)
-    else:
-        # Process file
-        with st.spinner("Processing inventory data..."):
-            inventario_df, outlet_df, metrics = load_and_process_inventory(uploaded_file)
+    for uploaded_file in uploaded_files:
+        # Validate file
+        is_valid, message = validate_excel_file(uploaded_file)
         
-        st.success("✅ File processed successfully!")
+        if not is_valid:
+            st.error(f"{uploaded_file.name}: {message}")
+            continue
+        
+        # Process file
+        with st.spinner(f"Processing {uploaded_file.name}..."):
+            try:
+                inventario_df, outlet_df, metrics = load_and_process_inventory(uploaded_file)
+                processed_data[uploaded_file.name] = {
+                    'inventario_df': inventario_df,
+                    'outlet_df': outlet_df,
+                    'metrics': metrics
+                }
+            except Exception as e:
+                st.error(f"Error processing {uploaded_file.name}: {str(e)}")
+                continue
+    
+    if len(processed_data) > 0:
+        st.success(f"✅ Processed {len(processed_data)} file(s) successfully!")
+        
+        # File selection for comparison
+        if len(processed_data) > 1:
+            st.markdown("### 📊 Compare Files")
+            selected_files = st.multiselect(
+                "Select files to compare",
+                options=list(processed_data.keys()),
+                default=list(processed_data.keys())[:2]
+            )
+            
+            if len(selected_files) > 1:
+                # Create comparison metrics
+                comparison_data = []
+                for file_name in selected_files:
+                    metrics = processed_data[file_name]['metrics']
+                    comparison_data.append({
+                        'File': file_name,
+                        'Total Sales (Outlet)': metrics['total_sales_outlet'],
+                        'Total Sales (Floor)': metrics['total_sales_floor'],
+                        'Total Units Sold': metrics['total_units_sold'],
+                        'Avg Selling Price': metrics['avg_selling_price'],
+                        'Avg Discount': metrics['avg_discount']
+                    })
+                
+                comparison_df = pd.DataFrame(comparison_data)
+                
+                # Display comparison metrics
+                st.markdown("#### 📈 Metrics Comparison")
+                st.dataframe(comparison_df.style.format({
+                    'Total Sales (Outlet)': '${:,.2f}',
+                    'Total Sales (Floor)': '${:,.2f}',
+                    'Total Units Sold': '{:,.0f}',
+                    'Avg Selling Price': '${:,.2f}',
+                    'Avg Discount': '{:.1f}%'
+                }))
+                
+                # Comparison visualizations
+                st.markdown("#### 📊 Visual Comparisons")
+                
+                # Sales comparison bar chart
+                fig_sales_comp = go.Figure()
+                for file_name in selected_files:
+                    metrics = processed_data[file_name]['metrics']
+                    fig_sales_comp.add_trace(go.Bar(
+                        name=file_name,
+                        x=['Outlet Sales', 'Floor Sales'],
+                        y=[metrics['total_sales_outlet'], metrics['total_sales_floor']]
+                    ))
+                
+                fig_sales_comp.update_layout(
+                    title='Sales Comparison',
+                    barmode='group',
+                    xaxis_title="Sales Type",
+                    yaxis_title="Amount ($)"
+                )
+                st.plotly_chart(fig_sales_comp, use_container_width=True)
+                
+                # Units sold comparison
+                fig_units = go.Figure()
+                for file_name in selected_files:
+                    metrics = processed_data[file_name]['metrics']
+                    fig_units.add_trace(go.Bar(
+                        name=file_name,
+                        x=['Units Sold'],
+                        y=[metrics['total_units_sold']]
+                    ))
+                
+                fig_units.update_layout(
+                    title='Units Sold Comparison',
+                    barmode='group',
+                    xaxis_title="Metric",
+                    yaxis_title="Units"
+                )
+                st.plotly_chart(fig_units, use_container_width=True)
+        
+        # Display individual file analysis
+        st.markdown("### 📊 Individual File Analysis")
+        for file_name, data in processed_data.items():
+            with st.expander(f"Analysis for {file_name}"):
         
         # Display metrics in columns
-        col1, col2, col3 = st.columns(3)
+                col1, col2, col3 = st.columns(3)
         
         with col1:
             st.markdown("### 💰 Sales Metrics")
