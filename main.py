@@ -158,7 +158,17 @@ if uploaded_file is not None:
             else:
                 # Process monthly sales data
                 print("\nProcessing monthly sales data...")
-                monthly_sales = outlet_df[monthly_columns].sum()
+                print(f"Data types of columns:\n{outlet_df[monthly_columns].dtypes}")
+                print(f"Data shape: {outlet_df[monthly_columns].shape}")
+                
+                # Convert numeric columns and handle any non-numeric values
+                numeric_df = outlet_df[monthly_columns].apply(pd.to_numeric, errors='coerce')
+                nan_check = numeric_df.isna()
+                if nan_check.values.any():
+                    print("Warning: Found non-numeric values in monthly data")
+                    print(f"NaN counts:\n{numeric_df.isna().sum()}")
+                
+                monthly_sales = numeric_df.sum()
                 print(f"Monthly sales totals:\n{monthly_sales}")
                 
                 monthly_sales_df = pd.DataFrame({
@@ -166,6 +176,7 @@ if uploaded_file is not None:
                     'Units Sold': monthly_sales.values
                 })
                 print(f"\nMonthly sales DataFrame:\n{monthly_sales_df}")
+                print(f"Monthly sales data types:\n{monthly_sales_df.dtypes}")
                 
                 if not monthly_sales_df.empty:
                     fig_sales = px.line(
@@ -201,8 +212,14 @@ if uploaded_file is not None:
             try:
                 with col1:
                     print("\nProcessing floor price distribution...")
+                    print(f"Floor Price data type: {inventario_df['Floor_Price'].dtype}")
+                    print(f"Floor Price range: [{inventario_df['Floor_Price'].min()}, {inventario_df['Floor_Price'].max()}]")
                     floor_price_stats = inventario_df['Floor_Price'].describe()
                     print(f"Floor price statistics:\n{floor_price_stats}")
+                    print(f"Number of unique prices: {inventario_df['Floor_Price'].nunique()}")
+                    nan_check = inventario_df['Floor_Price'].isna()
+                    if nan_check.values.any():
+                        print(f"Number of missing values: {inventario_df['Floor_Price'].isna().sum()}")
                     
                     fig_floor = px.histogram(
                         inventario_df,
@@ -224,8 +241,14 @@ if uploaded_file is not None:
             try:
                 with col2:
                     print("\nProcessing outlet price distribution...")
+                    print(f"Outlet Price data type: {inventario_df['Outlet_Price'].dtype}")
+                    print(f"Outlet Price range: [{inventario_df['Outlet_Price'].min()}, {inventario_df['Outlet_Price'].max()}]")
                     outlet_price_stats = inventario_df['Outlet_Price'].describe()
                     print(f"Outlet price statistics:\n{outlet_price_stats}")
+                    print(f"Number of unique prices: {inventario_df['Outlet_Price'].nunique()}")
+                    nan_check = inventario_df['Outlet_Price'].isna()
+                    if nan_check.values.any():
+                        print(f"Number of missing values: {inventario_df['Outlet_Price'].isna().sum()}")
                     
                     fig_outlet = px.histogram(
                         inventario_df,
@@ -247,10 +270,19 @@ if uploaded_file is not None:
         # Top 10 Products
         try:
             print("\nProcessing top 10 products data...")
+            print(f"DataFrame columns: {inventario_df.columns.tolist()}")
+            print(f"DataFrame shape: {inventario_df.shape}")
+            
             if 'Units_Sold' not in inventario_df.columns or 'Description' not in inventario_df.columns:
                 st.error("Missing required columns for top 10 products visualization")
                 print("Top 10 products validation error: Missing required columns")
+                print(f"Available columns: {inventario_df.columns.tolist()}")
             else:
+                print(f"Units Sold data type: {inventario_df['Units_Sold'].dtype}")
+                print(f"Description data type: {inventario_df['Description'].dtype}")
+                print(f"Total number of products: {len(inventario_df)}")
+                print(f"Number of products with sales > 0: {(inventario_df['Units_Sold'] > 0).sum()}")
+                
                 top_10_products = inventario_df.nlargest(10, 'Units_Sold')
                 print(f"Top 10 products data:\n{top_10_products[['Description', 'Units_Sold']]}")
                 
