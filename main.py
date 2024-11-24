@@ -30,25 +30,39 @@ Upload your file below to get started.
 """)
 
 # File upload section
-st.markdown("### 📁 Upload Inventory File")
-uploaded_file = st.file_uploader(
-    "Drag and drop your Excel file here",
+st.markdown("### 📁 Upload Inventory Files")
+uploaded_files = st.file_uploader(
+    "Drag and drop your Excel files here",
     type=['xlsx'],
-    help="File must contain 'Inventario' and 'Outlet' sheets"
+    help="Files must contain 'Inventario' and 'Outlet' sheets",
+    accept_multiple_files=True
 )
 
-if uploaded_file is not None:
-    # Validate file
-    is_valid, message = validate_excel_file(uploaded_file)
+if uploaded_files:
+    # Process each file
+    all_metrics = []
+    all_inventario_dfs = []
+    all_outlet_dfs = []
     
-    if not is_valid:
-        st.error(message)
-    else:
-        # Process file
-        with st.spinner("Processing inventory data..."):
-            inventario_df, outlet_df, metrics = load_and_process_inventory(uploaded_file)
+    for idx, file in enumerate(uploaded_files):
+        # Validate file
+        is_valid, message = validate_excel_file(file)
         
-        st.success("✅ File processed successfully!")
+        if not is_valid:
+            st.error(f"File {idx + 1}: {message}")
+        else:
+            # Process file
+            with st.spinner(f"Processing inventory data from file {idx + 1}..."):
+                inventario_df, outlet_df, metrics = load_and_process_inventory(file)
+                metrics['file_name'] = file.name
+                all_metrics.append(metrics)
+                all_inventario_dfs.append(inventario_df)
+                all_outlet_dfs.append(outlet_df)
+            
+            st.success(f"✅ File {idx + 1} processed successfully!")
+    
+    if len(all_metrics) > 0:
+        st.markdown("### 📊 Files Comparison")
         
         # Display metrics in columns
         col1, col2, col3 = st.columns(3)
@@ -138,6 +152,61 @@ if uploaded_file is not None:
                     <div class="metric-label">Product</div>
                     <div class="metric-value">{metrics['worst_seller']['description']}</div>
                     <div class="metric-label">Units Sold: {format_number(metrics['worst_seller']['units'])}</div>
+        # Comparison Visualizations
+        if len(all_metrics) > 1:
+            st.markdown("### 📈 Metrics Comparison")
+            
+            # Compare total sales
+            sales_comparison = pd.DataFrame([{
+                'File': m['file_name'],
+                'Total Sales (Outlet)': m['total_sales_outlet'],
+                'Total Sales (Floor)': m['total_sales_floor']
+            } for m in all_metrics])
+            
+            fig_sales_comp = px.bar(
+                sales_comparison.melt(id_vars=['File'], var_name='Metric', value_name='Amount'),
+                x='File',
+                y='Amount',
+                color='Metric',
+                title='Total Sales Comparison',
+                barmode='group'
+            )
+            st.plotly_chart(fig_sales_comp, use_container_width=True)
+            
+            # Compare inventory metrics
+            inventory_comparison = pd.DataFrame([{
+                'File': m['file_name'],
+                'Inventory Turnover': m['inventory_turnover'],
+                'Sell-Through Rate': m['sell_through_rate'],
+                'Stock to Sales Ratio': m['stock_to_sales_ratio']
+            } for m in all_metrics])
+            
+            fig_inventory_comp = px.bar(
+                inventory_comparison.melt(id_vars=['File'], var_name='Metric', value_name='Value'),
+                x='File',
+                y='Value',
+                color='Metric',
+                title='Inventory Metrics Comparison',
+                barmode='group'
+            )
+            st.plotly_chart(fig_inventory_comp, use_container_width=True)
+            
+            # Compare price metrics
+            price_comparison = pd.DataFrame([{
+                'File': m['file_name'],
+                'Average Selling Price': m['avg_selling_price'],
+                'Average Discount': m['avg_discount']
+            } for m in all_metrics])
+            
+            fig_price_comp = px.bar(
+                price_comparison.melt(id_vars=['File'], var_name='Metric', value_name='Value'),
+                x='File',
+                y='Value',
+                color='Metric',
+                title='Price Metrics Comparison',
+                barmode='group'
+            )
+            st.plotly_chart(fig_price_comp, use_container_width=True)
                 </div>
                 """,
                 unsafe_allow_html=True
