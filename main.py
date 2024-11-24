@@ -136,33 +136,53 @@ if uploaded_file is not None:
         
         # Data Visualizations
         st.markdown("### 📊 Data Visualizations")
-        
+
+        def validate_dataframe(df, required_columns):
+            """Validate DataFrame has required columns and non-empty."""
+            if df is None or df.empty:
+                return False, "DataFrame is empty"
+            missing_cols = [col for col in required_columns if col not in df.columns]
+            if missing_cols:
+                return False, f"Missing required columns: {', '.join(missing_cols)}"
+            return True, "DataFrame is valid"
+
+        # Monthly Sales Trend
         try:
-            # Monthly Sales Trend
             monthly_columns = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre']
-            monthly_sales = outlet_df[monthly_columns].sum()
             
-            # Debug print for monthly sales data
-            print("Monthly Sales Data:")
-            print(monthly_sales)
-            
-            monthly_sales_df = pd.DataFrame({
-                'Month': monthly_sales.index,
-                'Units Sold': monthly_sales.values
-            })
-            
-            # Debug print for monthly sales DataFrame
-            print("\nMonthly Sales DataFrame:")
-            print(monthly_sales_df)
-            
-            fig_sales = px.line(
-                monthly_sales_df,
-                x='Month',
-                y='Units Sold',
-                title='Monthly Sales Trend',
-                markers=True
-            )
-            st.plotly_chart(fig_sales, use_container_width=True)
+            # Validate outlet_df
+            is_valid, message = validate_dataframe(outlet_df, monthly_columns)
+            if not is_valid:
+                st.error(f"Monthly Sales Trend: {message}")
+                print(f"Monthly Sales validation error: {message}")
+            else:
+                # Process monthly sales data
+                print("\nProcessing monthly sales data...")
+                monthly_sales = outlet_df[monthly_columns].sum()
+                print(f"Monthly sales totals:\n{monthly_sales}")
+                
+                monthly_sales_df = pd.DataFrame({
+                    'Month': monthly_sales.index,
+                    'Units Sold': monthly_sales.values
+                })
+                print(f"\nMonthly sales DataFrame:\n{monthly_sales_df}")
+                
+                if not monthly_sales_df.empty:
+                    fig_sales = px.line(
+                        monthly_sales_df,
+                        x='Month',
+                        y='Units Sold',
+                        title='Monthly Sales Trend',
+                        markers=True
+                    )
+                    fig_sales.update_layout(
+                        xaxis_title="Month",
+                        yaxis_title="Units Sold",
+                        showlegend=True
+                    )
+                    st.plotly_chart(fig_sales, use_container_width=True)
+                else:
+                    st.warning("No monthly sales data available to display")
         except Exception as e:
             st.error(f"Error creating monthly sales trend chart: {str(e)}")
             print(f"Monthly sales visualization error: {str(e)}")
@@ -170,60 +190,88 @@ if uploaded_file is not None:
         # Price Distribution
         col1, col2 = st.columns(2)
         
-        try:
-            with col1:
-                # Debug print for floor price data
-                print("\nFloor Price Distribution Data:")
-                print(inventario_df['Floor_Price'].describe())
-                
-                fig_floor = px.histogram(
-                    inventario_df,
-                    x='Floor_Price',
-                    title='Floor Price Distribution',
-                    labels={'Floor_Price': 'Price'},
-                )
-                st.plotly_chart(fig_floor, use_container_width=True)
-        except Exception as e:
-            st.error(f"Error creating floor price distribution chart: {str(e)}")
-            print(f"Floor price visualization error: {str(e)}")
+        # Validate inventario_df
+        price_columns = ['Floor_Price', 'Outlet_Price']
+        is_valid, message = validate_dataframe(inventario_df, price_columns)
         
-        try:
-            with col2:
-                # Debug print for outlet price data
-                print("\nOutlet Price Distribution Data:")
-                print(inventario_df['Outlet_Price'].describe())
-                
-                fig_outlet = px.histogram(
-                    inventario_df,
-                    x='Outlet_Price',
-                    title='Outlet Price Distribution',
-                    labels={'Outlet_Price': 'Price'},
-                )
-                st.plotly_chart(fig_outlet, use_container_width=True)
-        except Exception as e:
-            st.error(f"Error creating outlet price distribution chart: {str(e)}")
-            print(f"Outlet price visualization error: {str(e)}")
+        if not is_valid:
+            st.error(f"Price Distribution: {message}")
+            print(f"Price distribution validation error: {message}")
+        else:
+            try:
+                with col1:
+                    print("\nProcessing floor price distribution...")
+                    floor_price_stats = inventario_df['Floor_Price'].describe()
+                    print(f"Floor price statistics:\n{floor_price_stats}")
+                    
+                    fig_floor = px.histogram(
+                        inventario_df,
+                        x='Floor_Price',
+                        title='Floor Price Distribution',
+                        labels={'Floor_Price': 'Price'},
+                        nbins=30
+                    )
+                    fig_floor.update_layout(
+                        xaxis_title="Floor Price",
+                        yaxis_title="Count",
+                        showlegend=False
+                    )
+                    st.plotly_chart(fig_floor, use_container_width=True)
+            except Exception as e:
+                st.error(f"Error creating floor price distribution chart: {str(e)}")
+                print(f"Floor price visualization error: {str(e)}")
+            
+            try:
+                with col2:
+                    print("\nProcessing outlet price distribution...")
+                    outlet_price_stats = inventario_df['Outlet_Price'].describe()
+                    print(f"Outlet price statistics:\n{outlet_price_stats}")
+                    
+                    fig_outlet = px.histogram(
+                        inventario_df,
+                        x='Outlet_Price',
+                        title='Outlet Price Distribution',
+                        labels={'Outlet_Price': 'Price'},
+                        nbins=30
+                    )
+                    fig_outlet.update_layout(
+                        xaxis_title="Outlet Price",
+                        yaxis_title="Count",
+                        showlegend=False
+                    )
+                    st.plotly_chart(fig_outlet, use_container_width=True)
+            except Exception as e:
+                st.error(f"Error creating outlet price distribution chart: {str(e)}")
+                print(f"Outlet price visualization error: {str(e)}")
 
+        # Top 10 Products
         try:
-            # Top 10 Products by Units Sold
-            top_10_products = inventario_df.nlargest(10, 'Units_Sold')
-            
-            # Debug print for top 10 products data
-            print("\nTop 10 Products Data:")
-            print(top_10_products[['Description', 'Units_Sold']])
-            
-            fig_top10 = px.bar(
-                top_10_products,
-                x='Description',
-                y='Units_Sold',
-                title='Top 10 Products by Units Sold',
-                labels={'Description': 'Product', 'Units_Sold': 'Units Sold'}
-            )
-            fig_top10.update_layout(
-                xaxis_tickangle=45,
-                height=500
-            )
-            st.plotly_chart(fig_top10, use_container_width=True)
+            print("\nProcessing top 10 products data...")
+            if 'Units_Sold' not in inventario_df.columns or 'Description' not in inventario_df.columns:
+                st.error("Missing required columns for top 10 products visualization")
+                print("Top 10 products validation error: Missing required columns")
+            else:
+                top_10_products = inventario_df.nlargest(10, 'Units_Sold')
+                print(f"Top 10 products data:\n{top_10_products[['Description', 'Units_Sold']]}")
+                
+                if not top_10_products.empty:
+                    fig_top10 = px.bar(
+                        top_10_products,
+                        x='Description',
+                        y='Units_Sold',
+                        title='Top 10 Products by Units Sold',
+                        labels={'Description': 'Product', 'Units_Sold': 'Units Sold'}
+                    )
+                    fig_top10.update_layout(
+                        xaxis_tickangle=45,
+                        height=500,
+                        xaxis_title="Product",
+                        yaxis_title="Units Sold",
+                        showlegend=False
+                    )
+                    st.plotly_chart(fig_top10, use_container_width=True)
+                else:
+                    st.warning("No product sales data available to display")
         except Exception as e:
             st.error(f"Error creating top 10 products chart: {str(e)}")
             print(f"Top 10 products visualization error: {str(e)}")
