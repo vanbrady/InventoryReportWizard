@@ -30,116 +30,25 @@ Upload your file below to get started.
 """)
 
 # File upload section
-st.markdown("### 📁 Upload Inventory Files")
-uploaded_files = st.file_uploader(
-    "Drag and drop your Excel files here",
+st.markdown("### 📁 Upload Inventory File")
+uploaded_file = st.file_uploader(
+    "Drag and drop your Excel file here",
     type=['xlsx'],
-    help="Files must contain 'Inventario' and 'Outlet' sheets",
-    accept_multiple_files=True
+    help="File must contain 'Inventario' and 'Outlet' sheets"
 )
 
-if uploaded_files:
-    # Select files for comparison
-    selected_files = []
-    for file in uploaded_files:
-        if st.checkbox(f"Compare {file.name}", key=file.name):
-            selected_files.append(file)
+if uploaded_file is not None:
+    # Validate file
+    is_valid, message = validate_excel_file(uploaded_file)
     
-    if len(selected_files) == 0:
-        st.warning("Please select at least one file for analysis")
+    if not is_valid:
+        st.error(message)
     else:
-        # Process selected files
-        all_data = {}
-        # Process selected files
-        all_data = {}
-        inventario_df = None
-        outlet_df = None
-        metrics = None
-        
+        # Process file
         with st.spinner("Processing inventory data..."):
-            for file in selected_files:
-                # Validate file
-                is_valid, message = validate_excel_file(file)
-                if not is_valid:
-                    st.error(f"Error in {file.name}: {message}")
-                    continue
-                
-                try:
-                    # Process file
-                    curr_inventario_df, curr_outlet_df, curr_metrics = load_and_process_inventory(file)
-                    all_data[file.name] = {
-                        'inventario': curr_inventario_df,
-                        'outlet': curr_outlet_df,
-                        'metrics': curr_metrics
-                    }
-                except Exception as e:
-                    st.error(f"Error processing {file.name}: {str(e)}")
-                    continue
+            inventario_df, outlet_df, metrics = load_and_process_inventory(uploaded_file)
         
-        if all_data:
-            st.success("✅ Files processed successfully!")
-
-            # Add file comparison section
-            if len(all_data) > 1:
-                st.markdown("### 📊 File Comparison")
-                
-                # Create comparison metrics
-                comparison_data = []
-                for filename, data in all_data.items():
-                    metrics = data['metrics']
-                    comparison_data.append({
-                        'File': filename,
-                        'Total Sales': metrics['total_sales_outlet'],
-                        'Units Sold': metrics['total_units_sold'],
-                        'Avg Price': metrics['avg_selling_price'],
-                        'Avg Discount': metrics['avg_discount'],
-                        'Inventory Turnover': metrics['inventory_turnover']
-                    })
-                
-                comparison_df = pd.DataFrame(comparison_data)
-                
-                # Display comparison table
-                st.dataframe(comparison_df.style.format({
-                    'Total Sales': '${:,.2f}',
-                    'Units Sold': '{:,.0f}',
-                    'Avg Price': '${:,.2f}',
-                    'Avg Discount': '{:.1f}%',
-                    'Inventory Turnover': '{:,.1f}'
-                }))
-                
-                # Create comparison charts
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    # Sales comparison chart
-                    fig_sales_comp = px.bar(
-                        comparison_df,
-                        x='File',
-                        y='Total Sales',
-                        title='Total Sales Comparison'
-                    )
-                    st.plotly_chart(fig_sales_comp, use_container_width=True)
-                
-                with col2:
-                    # Units sold comparison chart
-                    fig_units_comp = px.bar(
-                        comparison_df,
-                        x='File',
-                        y='Units Sold',
-                        title='Units Sold Comparison'
-                    )
-                    st.plotly_chart(fig_units_comp, use_container_width=True)
-            
-            # Select a file to show detailed analysis
-            selected_file = st.selectbox(
-                "Select a file for detailed analysis",
-                list(all_data.keys())
-            )
-            
-            # Use the selected file's data for detailed analysis
-            inventario_df = all_data[selected_file]['inventario']
-            outlet_df = all_data[selected_file]['outlet']
-            metrics = all_data[selected_file]['metrics']
+        st.success("✅ File processed successfully!")
         
         # Display metrics in columns
         col1, col2, col3 = st.columns(3)
